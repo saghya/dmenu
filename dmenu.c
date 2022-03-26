@@ -831,7 +831,7 @@ setup(void)
                     break;
 
         if (centered) {
-            mw = MIN(MAX(max_textw() + promptw, min_width), info[i].width);
+            mw = (dmw > 0 ? dmw : MIN(MAX(max_textw() + promptw, min_width), info[i].width));
             x = info[i].x_org + ((info[i].width  - mw) / 2);
             y = info[i].y_org + ((info[i].height - mh) / 2);
         } else {
@@ -849,7 +849,7 @@ setup(void)
                 parentwin);
 
         if (centered) {
-            mw = MIN(MAX(max_textw() + promptw, min_width), wa.width);
+            mw = (dmw > 0 ? dmw : MIN(MAX(max_textw() + promptw, min_width), wa.width));
             x = (wa.width  - mw) / 2;
             y = (wa.height - mh) / 2;
         } else {
@@ -959,7 +959,6 @@ main(int argc, char *argv[])
             embed = argv[++i];
         else if (!strcmp(argv[i], "-bw"))
             border_width = atoi(argv[++i]); /* border width */
-        else
         else
             usage();
 
