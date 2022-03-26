@@ -37,6 +37,7 @@ struct item {
 static char text[BUFSIZ] = "";
 static char *embed;
 static int bh, mw, mh;
+static int centered = 1;
 static int dmx = 0; /* put dmenu at this x offset */
 static int dmy = 0; /* put dmenu at this y offset (measured from the bottom if topbar is 0) */
 static unsigned int dmw = 0; /* make dmenu this wide */
@@ -97,6 +98,15 @@ calcoffsets(void)
     for (i = 0, prev = curr; prev && prev->left; prev = prev->left)
         if ((i += (lines > 0) ? bh : textw_clamp(prev->left->text, n)) > n)
             break;
+}
+
+static int
+max_textw(void)
+{
+	int len = 0;
+	for (struct item *item = items; item && item->text; item++)
+		len = MAX(TEXTW(item->text), len);
+	return len;
 }
 
 static void
@@ -633,10 +643,11 @@ setup(void)
     clip = XInternAtom(dpy, "CLIPBOARD",   False);
     utf8 = XInternAtom(dpy, "UTF8_STRING", False);
 
-    /* calculate menu geometry */
-    bh = drw->fonts->h + 2;
-    lines = MAX(lines, 0);
-    mh = (lines + 1) * bh;
+	/* calculate menu geometry */
+	bh = drw->fonts->h + 2;
+	lines = MAX(lines, 0);
+	mh = (lines + 1) * bh;
+	promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
 #ifdef XINERAMA
     i = 0;
     if (parentwin == root && (info = XineramaQueryScreens(dpy, &n))) {
@@ -663,28 +674,42 @@ setup(void)
                 if (INTERSECT(x, y, 1, 1, info[i]) != 0)
                     break;
 
-        x = info[i].x_org + dmx;
-        y = info[i].y_org + (topbar ? dmy : info[i].height - mh - dmy);
-        mw = (dmw>0 ? dmw : info[i].width);
-        XFree(info);
-    } else
+		if (centered) {
+			mw = MIN(MAX(max_textw() + promptw, min_width), info[i].width);
+			x = info[i].x_org + ((info[i].width  - mw) / 2);
+			y = info[i].y_org + ((info[i].height - mh) / 2);
+		} else {
+			x = info[i].x_org + dmx;
+			y = info[i].y_org + (topbar ? 0 : info[i].height - mh - dmy);
+            mw = (dmw > 0 ? dmw : info[i].width);
+		}
+
+		XFree(info);
+	} else
 #endif
-    {
-        if (!XGetWindowAttributes(dpy, parentwin, &wa))
-            die("could not get embedding window attributes: 0x%lx",
-                parentwin);
-        x = dmx;
-        y = topbar ? dmy : wa.height - mh - dmy;
-        mw = (dmw>0 ? dmw : wa.width);
-    }
+	{
+		if (!XGetWindowAttributes(dpy, parentwin, &wa))
+			die("could not get embedding window attributes: 0x%lx",
+			    parentwin);
+
+		if (centered) {
+			mw = MIN(MAX(max_textw() + promptw, min_width), wa.width);
+			x = (wa.width  - mw) / 2;
+			y = (wa.height - mh) / 2;
+		} else {
+            x = dmx;
+            y = topbar ? dmy : wa.height - mh - dmy;
+            mw = (dmw > 0 ? dmw : wa.width);
+		}
+	}
     promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
-    for (item = items; item && item->text; ++item) {
-        if ((tmp = textw_clamp(item->text, mw/3)) > inputw) {
-            if ((inputw = tmp) == mw/3)
-                break;
-        }
-    }
-    match();
+	for (item = items; item && item->text; ++item) {
+		if ((tmp = textw_clamp(item->text, mw / 3)) > inputw) {
+			if ((inputw = tmp) == mw / 3)
+				break;
+		}
+	}
+	match();
 
     /* create menu window */
     swa.override_redirect = True;
@@ -749,10 +774,14 @@ main(int argc, char *argv[])
         /* these options take one argument */
         else if (!strcmp(argv[i], "-l"))   /* number of lines in vertical list */
             lines = atoi(argv[++i]);
-        else if (!strcmp(argv[i], "-x"))   /* window x offset */
+        else if (!strcmp(argv[i], "-x")) { /* window x offset */
             dmx = atoi(argv[++i]);
-        else if (!strcmp(argv[i], "-y"))   /* window y offset (from bottom up if -b) */
+            centered = 0;
+        }
+        else if (!strcmp(argv[i], "-y")) { /* window y offset (from bottom up if -b) */
             dmy = atoi(argv[++i]);
+            centered = 0;
+        }
         else if (!strcmp(argv[i], "-z"))   /* make dmenu this wide */
             dmw = atoi(argv[++i]);
         else if (!strcmp(argv[i], "-m"))
