@@ -711,15 +711,16 @@ setup(void)
 	}
 	match();
 
-    /* create menu window */
-    swa.override_redirect = True;
-    swa.background_pixel = scheme[SchemeNorm][ColBg].pixel;
-    swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
-    win = XCreateWindow(dpy, parentwin, x, y, mw, mh, 0,
-                        CopyFromParent, CopyFromParent, CopyFromParent,
-                        CWOverrideRedirect | CWBackPixel | CWEventMask, &swa);
-    XSetClassHint(dpy, win, &ch);
-
+	/* create menu window */
+	swa.override_redirect = True;
+	swa.background_pixel = scheme[SchemeNorm][ColBg].pixel;
+	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
+	win = XCreateWindow(dpy, parentwin, x, y - (topbar ? 0 : border_width * 2), mw - border_width * 2, mh, border_width,
+	                    CopyFromParent, CopyFromParent, CopyFromParent,
+	                    CWOverrideRedirect | CWBackPixel | CWEventMask, &swa);
+	if (border_width)
+		XSetWindowBorder(dpy, win, scheme[SchemeSel][ColBg].pixel);
+	XSetClassHint(dpy, win, &ch);
 
     /* input methods */
     if ((xim = XOpenIM(dpy, NULL, NULL, NULL)) == NULL)
@@ -757,6 +758,7 @@ main(int argc, char *argv[])
     XWindowAttributes wa;
     int i, fast = 0;
 
+<<<<<<< HEAD
     for (i = 1; i < argc; i++)
         /* these options take no arguments */
         if (!strcmp(argv[i], "-v")) {      /* prints version information */
@@ -802,6 +804,45 @@ main(int argc, char *argv[])
             embed = argv[++i];
         else
             usage();
+=======
+	for (i = 1; i < argc; i++)
+		/* these options take no arguments */
+		if (!strcmp(argv[i], "-v")) {      /* prints version information */
+			puts("dmenu-"VERSION);
+			exit(0);
+		} else if (!strcmp(argv[i], "-b")) /* appears at the bottom of the screen */
+			topbar = 0;
+		else if (!strcmp(argv[i], "-f"))   /* grabs keyboard before reading stdin */
+			fast = 1;
+		else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
+			fstrncmp = strncasecmp;
+			fstrstr = cistrstr;
+		} else if (i + 1 == argc)
+			usage();
+		/* these options take one argument */
+		else if (!strcmp(argv[i], "-l"))   /* number of lines in vertical list */
+			lines = atoi(argv[++i]);
+		else if (!strcmp(argv[i], "-m"))
+			mon = atoi(argv[++i]);
+		else if (!strcmp(argv[i], "-p"))   /* adds prompt to left of input field */
+			prompt = argv[++i];
+		else if (!strcmp(argv[i], "-fn"))  /* font or font set */
+			fonts[0] = argv[++i];
+		else if (!strcmp(argv[i], "-nb"))  /* normal background color */
+			colors[SchemeNorm][ColBg] = argv[++i];
+		else if (!strcmp(argv[i], "-nf"))  /* normal foreground color */
+			colors[SchemeNorm][ColFg] = argv[++i];
+		else if (!strcmp(argv[i], "-sb"))  /* selected background color */
+			colors[SchemeSel][ColBg] = argv[++i];
+		else if (!strcmp(argv[i], "-sf"))  /* selected foreground color */
+			colors[SchemeSel][ColFg] = argv[++i];
+		else if (!strcmp(argv[i], "-w"))   /* embedding window id */
+			embed = argv[++i];
+		else if (!strcmp(argv[i], "-bw"))
+			border_width = atoi(argv[++i]); /* border width */
+		else
+			usage();
+>>>>>>> border
 
     if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
         fputs("warning: no locale support\n", stderr);
