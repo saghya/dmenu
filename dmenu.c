@@ -428,9 +428,8 @@ keypress(XKeyEvent *ev)
     switch(ksym) {
     default:
 insert:
-        if (iscntrl((unsigned char)*buf))
-            return;
-        insert(buf, len);
+        if (!iscntrl((unsigned char)*buf))
+            insert(buf, len);
         break;
     case XK_Delete:
     case XK_KP_Delete:
