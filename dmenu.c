@@ -785,6 +785,7 @@ setup(void)
     Window w, dw, *dws;
     XWindowAttributes wa;
     XClassHint ch = {"dmenu", "dmenu"};
+    struct item *item;
 #ifdef XINERAMA
     XineramaScreenInfo *info;
     Window pw;
