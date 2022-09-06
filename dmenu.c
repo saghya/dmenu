@@ -530,9 +530,9 @@ insert:
     case XK_Tab:
         if (!sel)
             return;
-		cursor = strnlen(sel->text, sizeof text - 1);
-		memcpy(text, sel->text, cursor);
-		text[cursor] = '\0';
+        cursor = strnlen(sel->text, sizeof text - 1);
+        memcpy(text, sel->text, cursor);
+        text[cursor] = '\0';
         match();
         break;
     }
@@ -712,18 +712,18 @@ paste(void)
 static void
 readstdin(void)
 {
-	char *line = NULL;
-	size_t i, junk, size = 0;
-	ssize_t len;
+    char *line = NULL;
+    size_t i, junk, size = 0;
+    ssize_t len;
 
     /* read each line from stdin and add it to the item list */
-	for (i = 0; (len = getline(&line, &junk, stdin)) != -1; i++, line = NULL) {
+    for (i = 0; (len = getline(&line, &junk, stdin)) != -1; i++, line = NULL) {
         if (i + 1 >= size / sizeof *items)
             if (!(items = realloc(items, (size += BUFSIZ))))
                 die("cannot realloc %zu bytes:", size);
-		if (line[len - 1] == '\n')
-			line[len - 1] = '\0';
-		items[i].text = line;
+        if (line[len - 1] == '\n')
+            line[len - 1] = '\0';
+        items[i].text = line;
         items[i].out = 0;
     }
     if (items)
