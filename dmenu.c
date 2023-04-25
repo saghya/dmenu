@@ -783,7 +783,7 @@ static void
 setup(void)
 {
     int x, y, i, j;
-    unsigned int du, tmp;
+	unsigned int du, tmp;
     XSetWindowAttributes swa;
     XIM xim;
     Window w, dw, *dws;
