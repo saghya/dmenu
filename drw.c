@@ -178,8 +178,7 @@ drw_clr_create(Drw *drw, Clr *dest, const char *clrname)
 		die("error, cannot allocate color '%s'", clrname);
 }
 
-/* Wrapper to create color schemes. The caller has to call free(3) on the
- * returned color scheme when done using it. */
+/* Create color schemes. */
 Clr *
 drw_scm_create(Drw *drw, const char *clrnames[], size_t clrcount)
 {
@@ -187,12 +186,36 @@ drw_scm_create(Drw *drw, const char *clrnames[], size_t clrcount)
 	Clr *ret;
 
 	/* need at least two colors for a scheme */
-	if (!drw || !clrnames || clrcount < 2 || !(ret = ecalloc(clrcount, sizeof(XftColor))))
+	if (!drw || !clrnames || clrcount < 2 || !(ret = ecalloc(clrcount, sizeof(Clr))))
 		return NULL;
 
 	for (i = 0; i < clrcount; i++)
 		drw_clr_create(drw, &ret[i], clrnames[i]);
 	return ret;
+}
+
+void
+drw_clr_free(Drw *drw, Clr *c)
+{
+	if (!drw || !c)
+		return;
+
+	/* c is typedef XftColor Clr */
+	XftColorFree(drw->dpy, DefaultVisual(drw->dpy, drw->screen),
+	             DefaultColormap(drw->dpy, drw->screen), c);
+}
+
+void
+drw_scm_free(Drw *drw, Clr *scm, size_t clrcount)
+{
+	size_t i;
+
+	if (!drw || !scm)
+		return;
+
+	for (i = 0; i < clrcount; i++)
+		drw_clr_free(drw, &scm[i]);
+	free(scm);
 }
 
 void
@@ -248,6 +271,8 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 	} else {
 		XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColFg : ColBg].pixel);
 		XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w, h);
+		if (w < lpad)
+			return x + w;
 		d = XftDrawCreate(drw->dpy, drw->drawable,
 		                  DefaultVisual(drw->dpy, drw->screen),
 		                  DefaultColormap(drw->dpy, drw->screen));
@@ -258,10 +283,8 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
 	usedfont = drw->fonts;
 	if (!ellipsis_width && render)
 		ellipsis_width = drw_fontset_getwidth(drw, "...");
-	if (!invalid_width) {
-		invalid_width = -1; /* stop infinite recursion */
+	if (!invalid_width && render)
 		invalid_width = drw_fontset_getwidth(drw, invalid);
-	}
 	while (1) {
 		ew = ellipsis_len = utf8err = utf8charlen = utf8strlen = 0;
 		utf8str = text;
