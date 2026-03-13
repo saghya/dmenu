@@ -40,7 +40,7 @@ utf8decode(const char *s_in, long *u, int *err)
 	/* out of range, surrogate, overlong encoding */
 	if (cp > 0x10FFFF || (cp >> 11) == 0x1B || cp < overlong[len - 1])
 		return len;
- 
+
 	*err = 0;
 	*u = cp;
 	return len;
